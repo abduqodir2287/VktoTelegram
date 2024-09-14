@@ -70,7 +70,7 @@ media/
 .ruff_cache/
 
 # Other files
-main.py
+/main.py
 api_response.json
 get_group.json
 get_group.py

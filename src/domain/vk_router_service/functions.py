@@ -8,7 +8,7 @@ from src.configs.config import settings
 from src.configs.logger_setup import logger
 
 
-class VkBotFunctions:
+class VkRouterFunctions:
 
 	def __init__(self, bot: Bot):
 		self.bot = bot

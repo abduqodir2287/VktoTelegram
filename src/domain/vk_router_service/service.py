@@ -6,11 +6,11 @@ import asyncio
 
 from src.configs.logger_setup import logger
 from src.domain.bot_service.models import FSMAdmin
-from src.domain.vk_bot_service.functions import VkBotFunctions
+from src.domain.vk_router_service.functions import VkRouterFunctions
 from src.domain.buttons import start_sending_keyboard, stop_sending_keyboard
 
 
-class VkBotService(VkBotFunctions):
+class VkRouterService(VkRouterFunctions):
 
 	def __init__(self, bot: Bot) -> None:
 		super().__init__(bot)
@@ -21,7 +21,7 @@ class VkBotService(VkBotFunctions):
 
 		await message.reply("Начинаю отправку сообщений!", reply_markup=stop_sending_keyboard)
 
-		await state.set_state(FSMAdmin.stop)
+		await state.set_state(FSMAdmin.stop_sending)
 		await state.update_data(send_status=True)
 
 		await self.send_message(state)
@@ -31,18 +31,19 @@ class VkBotService(VkBotFunctions):
 		while True:
 			group_data = await state.get_data()
 
-			long_poll_server_url = group_data["vk_long_poll_server_url"]
-			long_poll_key = group_data["vk_long_poll_server_token"]
 			chat_id = group_data["telegram_group_id"]
 			send_status = group_data["send_status"]
-			ts = group_data["ts"]
 
 			if not send_status:
 				break
 
+			long_poll_server_data = await self.get_server_key(group_data["vk_group_id"], group_data["vk_group_token"])
+
 			logger.info("Check events")
 
-			long_poll_url = f"{long_poll_server_url}?act=a_check&key={long_poll_key}&ts={int(ts)}&wait=2"
+			long_poll_url = (f"{long_poll_server_data['response']['server']}"
+			                 f"?act=a_check&key={long_poll_server_data['response']['key']}&"
+			                 f"ts={int(group_data['ts'])}&wait=2")
 
 			async with aiohttp.ClientSession() as session:
 				async with session.get(long_poll_url, ssl=False) as response:
@@ -51,7 +52,7 @@ class VkBotService(VkBotFunctions):
 
 			await state.update_data(ts=events['ts'])
 
-			if 'updates' in events:
+			if events['updates']:
 				for event in events['updates']:
 					await self.check_event(event, int(chat_id))
 
@@ -64,7 +65,7 @@ class VkBotService(VkBotFunctions):
 		logger.info("Stop sending messages")
 		await message.answer("Отправка сообщений приостановлена!", reply_markup=start_sending_keyboard)
 
-		await state.set_state(FSMAdmin.start)
+		await state.set_state(FSMAdmin.start_sending)
 
 
 

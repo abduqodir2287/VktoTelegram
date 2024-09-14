@@ -6,8 +6,8 @@ class FSMAdmin(StatesGroup):
 	telegram_group_id = State()
 	vk_group_id = State()
 	vk_group_token = State()
-	start = State()
-	stop = State()
+	start_sending = State()
+	stop_sending = State()
 
 
 class GroupInformation(BaseModel):

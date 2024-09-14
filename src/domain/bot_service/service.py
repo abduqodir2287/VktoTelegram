@@ -9,27 +9,27 @@ from src.domain.bot_service.functions import BotFunctions
 from src.domain.buttons import check_group, start_sending_keyboard
 from src.domain.bot_service.models import FSMAdmin
 from src.domain.buttons import choice_group
-from src.domain.vk_bot_service.service import VkBotService
+from src.domain.vk_router_service.service import VkRouterService
 
 
-class BotService(BotFunctions, VkBotService):
+class BotService(BotFunctions, VkRouterService):
 
 	def __init__(self, bot: Bot, dp: Dispatcher) -> None:
 		BotFunctions.__init__(self, bot, dp)
-		VkBotService.__init__(self, bot)
+		VkRouterService.__init__(self, bot)
 		self.bot = bot
 		self.dp = dp
 
 
 	@staticmethod
 	async def start_bot_service(message: Message, state: FSMContext) -> None:
-		logger.info("Бот стартанул!")
 
 		if message.chat.type == 'group' or message.chat.type == 'supergroup':
 			await message.answer(f"ID этой группы: {message.chat.id}")
 			logger.info("Бот стартанул в группе!")
 
 		else:
+			logger.info("Бот стартанул!")
 			current_state = await state.get_state()
 
 			if current_state is not None:
@@ -62,12 +62,14 @@ class BotService(BotFunctions, VkBotService):
 			await self.is_bot_in_group(message, group_id, state)
 
 		else:
+			logger.info("Некорректный ID Группы")
 			await message.answer("Отправьте корректный ID Группы.\n"
 			                     "Только цифры!")
 
 
 	async def is_bot_in_group(self, message: Message, group_id: int, state: FSMContext) -> None:
 		try:
+			logger.info("Бот добавлен в группу")
 			chat = await self.bot.get_chat(-group_id)
 			await message.answer(f"Бот добавлен в группу: {chat.title}", parse_mode=ParseMode.MARKDOWN)
 
@@ -99,6 +101,8 @@ class BotService(BotFunctions, VkBotService):
 
 				await state.update_data(vk_group_id=vk_group_id)
 				await state.set_state(FSMAdmin.vk_group_token)
+			else:
+				await message.answer("Неправильный ID группы. Пожалуйста, проверьте и попробуйте снова.")
 
 		else:
 			await message.answer("Некорректный ID группы. Пожалуйста, проверьте и попробуйте снова.")
@@ -107,10 +111,12 @@ class BotService(BotFunctions, VkBotService):
 	@staticmethod
 	async def group_choice_service(message: Message, state: FSMContext) -> None:
 		if message.text == "Другое":
+			logger.info("Другая группа!")
 			await message.answer("Введите ID группы заново:", reply_markup=ReplyKeyboardRemove())
 			await state.set_state(FSMAdmin.vk_group_id)
 
 		elif message.text == "Да":
+			logger.info("Правильный группа!")
 			await message.reply(
 				"Хорошо, отправьте ключ доступа Long Poll API из группы Vk.\n"
 				"\n"
@@ -132,24 +138,18 @@ class BotService(BotFunctions, VkBotService):
 		long_poll_data = await self.get_server_key(vk_group_id, message.text)
 
 		if "response" in long_poll_data:
+			logger.info("Правильный токен доступа!")
 			await message.answer(
 				"Вы верно передали все параметры теперь можете начать отправления сообщений",
 				reply_markup=start_sending_keyboard
 			)
 
-			long_poll_url = long_poll_data["response"]["server"]
-			long_poll_token = long_poll_data["response"]["key"]
-			ts = long_poll_data["response"]["ts"]
+			await state.update_data(vk_group_token=message.text, ts=long_poll_data["response"]["ts"], send_status=False)
 
-			await state.update_data(
-				vk_group_token=message.text, vk_long_poll_server_url=long_poll_url,
-				vk_long_poll_server_token=long_poll_token, ts=ts, send_status=False
-			)
-
-			await state.set_state(FSMAdmin.start)
+			await state.set_state(FSMAdmin.start_sending)
 
 		else:
-			logger.warn("Incorrect Token")
+			logger.warn("Неправильный токен доступа!")
 			await message.answer("Неправильный токен доступа. Пожалуйста, проверьте и попробуйте снова.")
 
 

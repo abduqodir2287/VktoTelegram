@@ -3,10 +3,10 @@ import aiohttp
 
 from src.configs.config import settings
 from src.configs.logger_setup import logger
-from src.domain.vk_bot_service.functions import VkBotFunctions
+from src.domain.vk_router_service.functions import VkRouterFunctions
 
 
-class BotFunctions(VkBotFunctions):
+class BotFunctions(VkRouterFunctions):
 
 	def __init__(self, bot: Bot, dp: Dispatcher) -> None:
 		super().__init__(bot)
@@ -40,16 +40,15 @@ class BotFunctions(VkBotFunctions):
 				for group in data["response"]["groups"]:
 
 					if group["type"] == "group":
-						logger.info(f"{group['name']}")
+						logger.info(f"Имя группы: {group['name']}")
 						return group["name"]
 
 			elif "error" in data:
-				logger.warn(f"{data['error']['error_msg']}")
+				logger.warn(f"Ошибка: {data['error']['error_msg']}")
 				return False
 
 		except Exception as e:
-			logger.error(f"{e}")
-
+			logger.error(f"Ошибка: {e}")
 
 
 

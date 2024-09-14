@@ -1,8 +1,8 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
 	BOT_TOKEN: str
-	CHAT_ID: int
 	VK_API_VERSION: str
 	BASE_URL: str
 	GROUP_ACCESS_TOKEN: str
@@ -12,7 +12,6 @@ class Settings(BaseSettings):
 	REDIS_HOST: str
 	REDIS_PORT: int
 	REDIS_DATABASE: int
-	REDIS_CACHE_EXPIRATION: int
 	LOG_LEVEL: str
 	LOG_FORMAT: str
 	LOG_FILE: str

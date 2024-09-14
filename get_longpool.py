@@ -18,9 +18,10 @@ async def get_server_key() -> str:
 
     return server_data["response"]["key"]
 
+
 async def main():
     key = await get_server_key()
-    longpoll_url = f"{settings.LONG_POOL_SERVER}?act=a_check&key={key}&ts=39&wait=1"
+    longpoll_url = f"{settings.LONG_POOL_SERVER}?act=a_check&key={key}&ts=57&wait=3"
     async with aiohttp.ClientSession() as session:
         async with session.get(longpoll_url, ssl=False) as response:
             events = await response.text()
