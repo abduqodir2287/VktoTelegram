@@ -47,12 +47,11 @@ class BotService(BotFunctions, VkRouterService):
 	async def get_group_id(message: Message, state: FSMContext) -> None:
 		await state.set_state(FSMAdmin.telegram_group_id)
 
-		if message.chat.type != 'group':
-			await message.answer(
-				"Отправьте ID Группы который добавил этот бот\n\n"
-				"Чтобы узнать ID вашей группы, отправьте '/start' на вашу группу.",
-				parse_mode=ParseMode.MARKDOWN, reply_markup=ReplyKeyboardRemove()
-			)
+		await message.answer(
+			"Отправьте ID Группы который добавил этот бот\n\n"
+			"Чтобы узнать ID вашей группы, отправьте '/start' на вашу группу.",
+			parse_mode=ParseMode.MARKDOWN, reply_markup=ReplyKeyboardRemove()
+		)
 
 
 	async def check_group(self, message: Message, state: FSMContext) -> None:
@@ -151,9 +150,6 @@ class BotService(BotFunctions, VkRouterService):
 		else:
 			logger.warn("Неправильный токен доступа!")
 			await message.answer("Неправильный токен доступа. Пожалуйста, проверьте и попробуйте снова.")
-
-
-
 
 
 

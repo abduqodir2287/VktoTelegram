@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
 	BOT_TOKEN: str
+	TEXT_MAX_LENGTH: int
 	VK_API_VERSION: str
 	BASE_URL: str
 	GROUP_ACCESS_TOKEN: str

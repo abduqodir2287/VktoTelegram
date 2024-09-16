@@ -111,7 +111,7 @@ class VkRouterFunctions:
 
 	@staticmethod
 	async def text_split(text: str) -> list:
-		max_length = 2000
+		max_length = settings.TEXT_MAX_LENGTH
 		strings_list = []
 
 		while len(text) > max_length:
