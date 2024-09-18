@@ -24,9 +24,9 @@ class BotFunctions(VkRouterFunctions):
 
 
 	@staticmethod
-	async def check_vk_group(group_id: int) -> str | bool:
+	async def check_vk_group(group_url: str) -> dict | bool:
 		params = {
-			'group_id': group_id,
+			'group_id': group_url,
 			'access_token': settings.VK_APP_SERVICE_KEY,
 			'v': settings.VK_API_VERSION
 		}
@@ -38,10 +38,8 @@ class BotFunctions(VkRouterFunctions):
 
 			if "response" in data:
 				for group in data["response"]["groups"]:
-
-					if group["type"] == "group":
-						logger.info(f"Имя группы: {group['name']}")
-						return group["name"]
+					logger.info(f"Имя группы: {group['name']}")
+					return group
 
 			elif "error" in data:
 				logger.warn(f"Ошибка: {data['error']['error_msg']}")

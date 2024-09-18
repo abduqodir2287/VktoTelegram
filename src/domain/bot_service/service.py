@@ -75,7 +75,7 @@ class BotService(BotFunctions, VkRouterService):
 			await state.update_data(telegram_group_id=message.text)
 			await state.set_state(FSMAdmin.vk_group_id)
 
-			await message.answer("Теперь отправьте ID группы Vk")
+			await message.answer("Теперь отправьте Url группы Vk")
 
 		except TelegramBadRequest as e:
 			logger.error(f"{e}")
@@ -86,25 +86,28 @@ class BotService(BotFunctions, VkRouterService):
 
 
 	async def get_vk_group_id_service(self, message: Message, state: FSMContext) -> None:
-		vk_group_id = await self.is_integer_string(message.text)
+		if message.text.startswith("https://vk.com/"):
+			group_url = message.text
+			group_name = group_url.strip('/').split('/')[-1]
 
-		if vk_group_id:
-			group_name = await self.check_vk_group(vk_group_id)
+			group_info = await self.check_vk_group(group_name)
 
-			if group_name:
-				await message.answer(f"Корректный ID Группы.\n"
-				                     f"Имя группы {group_name}.")
+			if group_info:
+				await message.answer(
+					f"Корректный Url Группы.\n"
+					f"Имя группы {group_info['name'] if group_info['name'] is not None else group_info['screen_name']}."
+				)
 
 				await message.answer("Это ваша группа?\n"
 				                     "Если нет то нажмите на кнопку 'Другое'", reply_markup=choice_group)
 
-				await state.update_data(vk_group_id=vk_group_id)
+				await state.update_data(vk_group_id=group_info["id"])
 				await state.set_state(FSMAdmin.vk_group_token)
-			else:
-				await message.answer("Неправильный ID группы. Пожалуйста, проверьте и попробуйте снова.")
 
+			else:
+				await message.answer("Некорректный Url группы. Пожалуйста, проверьте и попробуйте снова.")
 		else:
-			await message.answer("Некорректный ID группы. Пожалуйста, проверьте и попробуйте снова.")
+			await message.answer("Некорректный Url группы. Url группы должно начинаться с `https://vk.com/`")
 
 
 	@staticmethod
