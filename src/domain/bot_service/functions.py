@@ -24,9 +24,9 @@ class BotFunctions(VkRouterFunctions):
 
 
 	@staticmethod
-	async def check_vk_group(group_url: str) -> dict | bool:
+	async def check_vk_group(group_name: str) -> dict | bool:
 		params = {
-			'group_id': group_url,
+			'group_id': group_name,
 			'access_token': settings.VK_APP_SERVICE_KEY,
 			'v': settings.VK_API_VERSION
 		}

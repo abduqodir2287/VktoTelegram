@@ -1,4 +1,4 @@
-from aiogram.enums import ParseMode
+from aiogram.enums import ParseMode, ChatMemberStatus
 from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.context import FSMContext
@@ -37,7 +37,7 @@ class BotService(BotFunctions, VkRouterService):
 
 			await message.answer(
 				f"Привет {message.from_user.first_name}.\n"
-				f"Сперва добавьте Бот на вашу группу",
+				f"Сперва добавьте Бот на вашу группу и сделайте Бота администратором группы",
 				reply_markup=check_group,
 				parse_mode=ParseMode.MARKDOWN
 			)
@@ -70,12 +70,22 @@ class BotService(BotFunctions, VkRouterService):
 		try:
 			logger.info("Бот добавлен в группу")
 			chat = await self.bot.get_chat(-group_id)
-			await message.answer(f"Бот добавлен в группу: {chat.title}", parse_mode=ParseMode.MARKDOWN)
 
-			await state.update_data(telegram_group_id=message.text)
-			await state.set_state(FSMAdmin.vk_group_id)
+			bot_info = await self.bot.get_chat_member(chat_id=-group_id, user_id=self.bot.id)
 
-			await message.answer("Теперь отправьте Url группы Vk")
+			if bot_info.status in ChatMemberStatus.ADMINISTRATOR:
+				await message.answer(
+					f"Бот добавлен в группу: {chat.title} и является администратором в этой группе.")
+
+				await state.update_data(telegram_group_id=message.text)
+				await state.set_state(FSMAdmin.vk_group_id)
+
+				await message.answer("Теперь отправьте Url группы Vk")
+
+			else:
+				await message.answer(
+					f"Бот добавлен в группу: {chat.title} но НЕ является администратором в этой группе.\n"
+					f"Сделайте Бота администратором группы и отправьте ID группы ещё раз")
 
 		except TelegramBadRequest as e:
 			logger.error(f"{e}")
@@ -83,6 +93,7 @@ class BotService(BotFunctions, VkRouterService):
 
 		except Exception as e:
 			logger.error(f"Произошла ошибка: {str(e)}")
+
 
 
 	async def get_vk_group_id_service(self, message: Message, state: FSMContext) -> None:
@@ -114,11 +125,13 @@ class BotService(BotFunctions, VkRouterService):
 	async def group_choice_service(message: Message, state: FSMContext) -> None:
 		if message.text == "Другое":
 			logger.info("Другая группа!")
+
 			await message.answer("Введите ID группы заново:", reply_markup=ReplyKeyboardRemove())
 			await state.set_state(FSMAdmin.vk_group_id)
 
 		elif message.text == "Да":
 			logger.info("Правильный группа!")
+
 			await message.reply(
 				"Хорошо, отправьте ключ доступа Long Poll API из группы Vk.\n"
 				"\n"
