@@ -20,5 +20,3 @@ async def start_send_messages(message: Message, state: FSMContext) -> None:
 async def stop_sending(message: Message, state: FSMContext) -> None:
 	await router_service.stop_sending_messages(message, state)
 
-
-

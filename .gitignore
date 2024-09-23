@@ -78,3 +78,5 @@ get_group_id.py
 get_server.json
 get_longpool.json
 task.md
+get_wall.json
+get_wall.py

@@ -36,13 +36,8 @@ async def get_vk_group_id(message: Message, state: FSMContext) -> None:
 	await bot_service.get_vk_group_id_service(message, state)
 
 
+@dp.message(FSMAdmin.yes_or_no)
 @dp.message(F.text.in_({"Другое", "Да"}), (F.chat.type != 'group') & (F.chat.type != 'supergroup'))
 async def group_choice(message: Message, state: FSMContext):
 	await bot_service.group_choice_service(message, state)
-
-
-@dp.message(FSMAdmin.vk_group_token)
-async def get_long_pool_key(message: Message, state: FSMContext) -> None:
-	await bot_service.get_long_pool_key(message, state)
-
 

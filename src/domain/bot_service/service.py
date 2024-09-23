@@ -48,7 +48,7 @@ class BotService(BotFunctions, VkRouterService):
 		await state.set_state(FSMAdmin.telegram_group_id)
 
 		await message.answer(
-			"Отправьте ID Группы который добавил этот бот\n\n"
+			"Отправьте ID Группы который добавили этот бот\n\n"
 			"Чтобы узнать ID вашей группы, отправьте '/start' на вашу группу.",
 			parse_mode=ParseMode.MARKDOWN, reply_markup=ReplyKeyboardRemove()
 		)
@@ -84,8 +84,8 @@ class BotService(BotFunctions, VkRouterService):
 
 			else:
 				await message.answer(
-					f"Бот добавлен в группу: {chat.title} но НЕ является администратором в этой группе.\n"
-					f"Сделайте Бота администратором группы и отправьте ID группы ещё раз")
+					f"Бот добавлен в группу: {chat.title} но НЕ является администратором в этой группе.")
+				await message.answer("Сделайте Бота администратором группы и отправьте ID группы ещё раз")
 
 		except TelegramBadRequest as e:
 			logger.error(f"{e}")
@@ -112,8 +112,16 @@ class BotService(BotFunctions, VkRouterService):
 				await message.answer("Это ваша группа?\n"
 				                     "Если нет то нажмите на кнопку 'Другое'", reply_markup=choice_group)
 
-				await state.update_data(vk_group_id=group_info["id"])
-				await state.set_state(FSMAdmin.vk_group_token)
+				group_wall = await self.get_wall(group_info["id"])
+				wall = group_wall["response"]["items"]
+
+				for event in wall:
+					last_wall_post_id = event["id"]
+
+					await state.update_data(
+						vk_group_id=group_info["id"], last_post_id=last_wall_post_id, send_status=False)
+
+				await state.set_state(FSMAdmin.yes_or_no)
 
 			else:
 				await message.answer("Некорректный Url группы. Пожалуйста, проверьте и попробуйте снова.")
@@ -126,46 +134,17 @@ class BotService(BotFunctions, VkRouterService):
 		if message.text == "Другое":
 			logger.info("Другая группа!")
 
-			await message.answer("Введите ID группы заново:", reply_markup=ReplyKeyboardRemove())
+			await message.answer("Введите Url группы заново:", reply_markup=ReplyKeyboardRemove())
 			await state.set_state(FSMAdmin.vk_group_id)
 
 		elif message.text == "Да":
 			logger.info("Правильный группа!")
 
-			await message.reply(
-				"Хорошо, отправьте ключ доступа Long Poll API из группы Vk.\n"
-				"\n"
-				"Если не знаете что это такое то можете прочитать вот здесь👇👇👇", reply_markup=ReplyKeyboardRemove())
-
-			await message.answer(
-				"https://dev.vk.com/ru/api/access-token/"
-				"getting-started#%D0%9A%D0%BB%D1%8E%D1%87%20%D0%B4%D0%BE%D1%81%D1%82%D1%83%D0%BF%"
-				"D0%B0%20%D1%81%D0%BE%D0%BE%D0%B1%D1%89%D0%B5%D1%81%D1%82%D0%B2%D0%B0"
-			)
-
-			await state.set_state(FSMAdmin.vk_group_token)
-
-
-	async def get_long_pool_key(self, message: Message, state: FSMContext) -> None:
-		data = await state.get_data()
-		vk_group_id = data.get('vk_group_id')
-
-		long_poll_data = await self.get_server_key(vk_group_id, message.text)
-
-		if "response" in long_poll_data:
-			logger.info("Правильный токен доступа!")
 			await message.answer(
 				"Вы верно передали все параметры теперь можете начать отправления сообщений",
 				reply_markup=start_sending_keyboard
 			)
 
-			await state.update_data(vk_group_token=message.text, ts=long_poll_data["response"]["ts"], send_status=False)
-
 			await state.set_state(FSMAdmin.start_sending)
-
-		else:
-			logger.warn("Неправильный токен доступа!")
-			await message.answer("Неправильный токен доступа. Пожалуйста, проверьте и попробуйте снова.")
-
 
 

@@ -1,7 +1,6 @@
 from aiogram import Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
-import aiohttp
 import asyncio
 
 from src.configs.logger_setup import logger
@@ -18,6 +17,7 @@ class VkRouterService(VkRouterFunctions):
 
 
 	async def start_send_messages(self, message: Message, state: FSMContext) -> None:
+		logger.info("Начался отправка сообщений!")
 
 		await message.reply("Начинаю отправку сообщений!", reply_markup=stop_sending_keyboard)
 
@@ -33,30 +33,23 @@ class VkRouterService(VkRouterFunctions):
 
 			chat_id = group_data["telegram_group_id"]
 			send_status = group_data["send_status"]
+			vk_group_id = group_data["vk_group_id"]
+			last_post_id = group_data["last_post_id"]
 
 			if not send_status:
 				break
 
-			long_poll_server_data = await self.get_server_key(group_data["vk_group_id"], group_data["vk_group_token"])
+			events = await self.get_wall(vk_group_id)
 
-			logger.info("Check events")
+			for event in events["response"]["items"]:
+				if event["id"] > last_post_id:
+					logger.info(f"Есть новый события: {event['id']}")
 
-			long_poll_url = (f"{long_poll_server_data['response']['server']}"
-			                 f"?act=a_check&key={long_poll_server_data['response']['key']}&"
-			                 f"ts={int(group_data['ts'])}&wait=2")
-
-			async with aiohttp.ClientSession() as session:
-				async with session.get(long_poll_url, ssl=False) as response:
-					events = await response.json()
-					logger.info(f"events: {events}")
-
-			await state.update_data(ts=events['ts'])
-
-			if events['updates']:
-				for event in events['updates']:
 					await self.check_event(event, int(chat_id))
 
-			await asyncio.sleep(4)
+					await state.update_data(last_post_id=event["id"])
+
+			await asyncio.sleep(3)
 
 
 	@staticmethod
@@ -66,7 +59,5 @@ class VkRouterService(VkRouterFunctions):
 		await message.answer("Отправка сообщений приостановлена!", reply_markup=start_sending_keyboard)
 
 		await state.set_state(FSMAdmin.start_sending)
-
-
 
 

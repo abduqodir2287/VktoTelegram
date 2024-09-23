@@ -1,18 +1,12 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-start_sending_button = KeyboardButton(text="Начать отправку")
-stop_sending_button = KeyboardButton(text="Остановить отправку")
+start_sending_keyboard = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="Начать отправку")]], resize_keyboard=True)
 
-check_group_button = KeyboardButton(text="Добавил")
+stop_sending_keyboard = ReplyKeyboardMarkup(
+	keyboard=[[KeyboardButton(text="Остановить отправку")]], resize_keyboard=True)
 
-yes = KeyboardButton(text="Да")
-other = KeyboardButton(text="Другое")
+check_group = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="Добавил")]], resize_keyboard=True)
 
-start_sending_keyboard = ReplyKeyboardMarkup(keyboard=[[start_sending_button]], resize_keyboard=True)
-
-stop_sending_keyboard = ReplyKeyboardMarkup(keyboard=[[stop_sending_button]], resize_keyboard=True)
-
-check_group = ReplyKeyboardMarkup(keyboard=[[check_group_button]], resize_keyboard=True)
-
-choice_group = ReplyKeyboardMarkup(keyboard=[[yes], [other]], resize_keyboard=True)
+choice_group = ReplyKeyboardMarkup(
+	keyboard=[[KeyboardButton(text="Да")], [KeyboardButton(text="Другое")]], resize_keyboard=True)
 

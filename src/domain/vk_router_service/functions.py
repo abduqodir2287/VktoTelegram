@@ -13,13 +13,15 @@ class VkRouterFunctions:
 	def __init__(self, bot: Bot):
 		self.bot = bot
 
+
 	@staticmethod
-	async def get_server_key(group_id: int, group_access_token: str) -> dict:
-		url = settings.BASE_URL + "groups.getLongPollServer"
+	async def get_wall(group_id: int) -> dict:
+		url = settings.BASE_URL + "wall.get"
 		params = {
-			"access_token": group_access_token,
-			"group_id": group_id,
-			"v": settings.VK_API_VERSION
+			"access_token": settings.VK_APP_SERVICE_KEY,
+			"owner_id": -group_id,
+			"v": settings.VK_API_VERSION,
+			"count": 1
 		}
 
 		async with aiohttp.ClientSession() as session:
@@ -32,7 +34,7 @@ class VkRouterFunctions:
 	async def send_photo_from_album(self, event: dict, chat_id: int) -> None:
 
 		photo_url = event["object"]["orig_photo"]["url"]
-		description = event["object"]["text"]
+		description = event["text"]
 
 		await self.bot.send_photo(
 			chat_id=-chat_id, photo=URLInputFile(photo_url),
@@ -46,7 +48,7 @@ class VkRouterFunctions:
 	async def send_photo_from_wall(self, event: dict, attachment: dict, chat_id: int) -> None:
 
 		photo_url = attachment["photo"]["orig_photo"]["url"]
-		description = event["object"]["text"]
+		description = event["text"]
 
 		await self.bot.send_photo(
 			chat_id=-chat_id, photo=URLInputFile(photo_url),
@@ -58,7 +60,7 @@ class VkRouterFunctions:
 
 
 	async def send_message_text(self, event: dict, chat_id: int) -> None:
-		text = event["object"]["text"]
+		text = event["text"]
 
 		text_parts = await self.text_split(text)
 
@@ -68,6 +70,7 @@ class VkRouterFunctions:
 			logger.info("New message sent successfully")
 
 		logger.info("All parst of text sent successfully")
+
 
 	async def send_pool_service(self, attachment: dict, chat_id: int) -> None:
 		try:
@@ -86,16 +89,20 @@ class VkRouterFunctions:
 				is_anonymous=is_anonymous,
 				type="regular"
 			)
+
+			logger.info("Опрос отправлено!")
 		except Exception as e:
 			logger.error(f"Неизвестный ошибка: {e}")
 
 
-	async def send_location_service(self, attachment: dict, chat_id: int) -> None:
-		coordinates = attachment['geo']['coordinates'].split()
+	async def send_location_service(self, event: dict, chat_id: int) -> None:
+		coordinates = event['geo']['coordinates'].split()
 		latitude = float(coordinates[0])
 		longitude = float(coordinates[1])
 
 		await self.bot.send_location(chat_id=-chat_id, latitude=latitude, longitude=longitude)
+
+		logger.info("Локация отправлено!")
 
 
 	async def send_document_service(self, attachment: dict, text: Optional[str], chat_id: int) -> None:
@@ -107,6 +114,8 @@ class VkRouterFunctions:
 			document=URLInputFile(doc_url, filename=file_name),
 			caption=text
 		)
+
+		logger.info("Новый файл отправлено!")
 
 
 	@staticmethod
@@ -127,37 +136,33 @@ class VkRouterFunctions:
 
 
 	async def check_event(self, event: dict, chat_id: int) -> None:
+		if "geo" in event:
+			await self.send_location_service(event, chat_id)
 
-		if "object" in event:
-			obj = event["object"]
+		elif "text" in event and not event["attachments"]:
+			logger.info("Received a text message")
+			await self.send_message_text(event, chat_id)
 
-			if "text" in obj and not obj.get("attachments"):
-				logger.info("Received a text message")
-				await self.send_message_text(event, chat_id)
+		elif "attachments" in event and event["attachments"]:
+			for attachment in event["attachments"]:
+				attachment_type = attachment["type"]
 
-			elif "attachments" in obj and obj["attachments"]:
-				for attachment in obj["attachments"]:
-					attachment_type = attachment.get("type")
+				if event["type"] == "photo_new":
+					await self.send_photo_from_album(event, chat_id)
 
-					if event["type"] == "photo_new":
-						await self.send_photo_from_album(event, chat_id)
+				if attachment_type == "photo":
+					await self.send_photo_from_wall(event, attachment, chat_id)
 
-					if attachment_type == "photo":
-						await self.send_photo_from_wall(event, attachment, chat_id)
+				elif attachment_type == "poll":
+					await self.send_pool_service(attachment, chat_id)
 
-					elif attachment_type == "poll":
-						await self.send_pool_service(attachment, chat_id)
+				elif attachment_type == "doc":
+					await self.send_document_service(attachment, event["text"], chat_id)
 
-					elif attachment_type == "doc":
-						await self.send_document_service(attachment, obj["text"], chat_id)
+				else:
+					logger.info(f"Unknown type: {attachment_type}")
 
-					elif attachment_type == "geo":
-						await self.send_location_service(attachment, chat_id)
-
-					else:
-						logger.info(f"Unknown type: {attachment_type}")
-
-			else:
-				logger.info("It's not clear")
+		else:
+			logger.info("It's not clear")
 
 
