@@ -10,3 +10,6 @@ check_group = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="Добавил
 choice_group = ReplyKeyboardMarkup(
 	keyboard=[[KeyboardButton(text="Да")], [KeyboardButton(text="Другое")]], resize_keyboard=True)
 
+channel_or_group = ReplyKeyboardMarkup(
+	keyboard=[[KeyboardButton(text="Канал")], [KeyboardButton(text="Группа")]], resize_keyboard=True)
+

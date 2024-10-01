@@ -9,7 +9,6 @@ class Settings(BaseSettings):
 	GROUP_ACCESS_TOKEN: str
 	GROUP_ID: int
 	VK_APP_SERVICE_KEY: str
-	LONG_POOL_SERVER: str
 	REDIS_HOST: str
 	REDIS_PORT: int
 	REDIS_DATABASE: int

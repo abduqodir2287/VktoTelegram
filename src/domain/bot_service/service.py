@@ -6,7 +6,7 @@ from aiogram.exceptions import TelegramBadRequest
 
 from src.configs.logger_setup import logger
 from src.domain.bot_service.functions import BotFunctions
-from src.domain.buttons import check_group, start_sending_keyboard
+from src.domain.buttons import check_group, start_sending_keyboard, channel_or_group
 from src.domain.bot_service.models import FSMAdmin
 from src.domain.buttons import choice_group
 from src.domain.vk_router_service.service import VkRouterService
@@ -23,24 +23,75 @@ class BotService(BotFunctions, VkRouterService):
 
 	@staticmethod
 	async def start_bot_service(message: Message, state: FSMContext) -> None:
+		logger.info("Бот стартанул!")
+		current_state = await state.get_state()
 
-		if message.chat.type == 'group' or message.chat.type == 'supergroup':
-			await message.answer(f"ID этой группы: {message.chat.id}")
-			logger.info("Бот стартанул в группе!")
+		if current_state is not None:
+			await state.clear()
+
+		await message.answer(
+			f"Привет {message.from_user.first_name}.\n"
+			f"Сперва добавьте Бот на вашу группу или канал и сделайте его администратором",
+			reply_markup=check_group,
+			parse_mode=ParseMode.MARKDOWN
+		)
+
+
+	@staticmethod
+	async def channel_or_group_service(message: Message) -> None:
+		await message.answer(
+			"Отлично! 🎉\n\n"
+			"Пожалуйста, укажи, куда ты добавил этого бота:\n"
+			"📢 На `Канал` или 🗣️ в `Группу`?",
+			reply_markup=channel_or_group
+		)
+
+		logger.info("Сообщение о выборе между каналом и группой отправлено")
+
+
+	@staticmethod
+	async def get_id_in_group(message: Message) -> None:
+		await message.answer(f"ID этой группы: {abs(message.chat.id)}")
+
+		logger.info("ID группы успешно передано")
+
+
+	@staticmethod
+	async def get_channel_message(message: Message, state: FSMContext) -> None:
+		await message.answer(
+			"Хорошо. Перешлите мне любое сообщения из канала\n"
+			"Которому добавили этот бот",
+			reply_markup=ReplyKeyboardRemove()
+		)
+
+		await state.set_state(FSMAdmin.telegram_channel_id)
+
+		logger.info("Пользователь добавил бота на канал!")
+
+
+	@staticmethod
+	async def get_channel_id_service(message: Message, state: FSMContext) -> None:
+		if message.forward_from_chat:
+			forward_chat_id = message.forward_from_chat.id
+			forward_chat_title = message.forward_from_chat.title
+
+			try:
+				bot_member = await message.bot.get_chat_member(chat_id=forward_chat_id, user_id=message.bot.id)
+
+				if bot_member:
+					await message.answer(f"Бот добавлен в этот канал. Имя канала {forward_chat_title}")
+
+					await state.update_data(telegram_group_id=abs(forward_chat_id))
+					await state.set_state(FSMAdmin.vk_group_id)
+
+					await message.answer("Теперь отправьте Url группы Vk")
+
+			except TelegramBadRequest:
+				await message.answer("Бот не добавлен в этот канал. \n"
+				                     "Отправьте сообщения иэ канала, который добавлен этот бот")
 
 		else:
-			logger.info("Бот стартанул!")
-			current_state = await state.get_state()
-
-			if current_state is not None:
-				await state.clear()
-
-			await message.answer(
-				f"Привет {message.from_user.first_name}.\n"
-				f"Сперва добавьте Бот на вашу группу и сделайте Бота администратором группы",
-				reply_markup=check_group,
-				parse_mode=ParseMode.MARKDOWN
-			)
+			await message.answer("Сообщение не переслано из Канала")
 
 
 	@staticmethod
@@ -48,8 +99,8 @@ class BotService(BotFunctions, VkRouterService):
 		await state.set_state(FSMAdmin.telegram_group_id)
 
 		await message.answer(
-			"Отправьте ID Группы который добавили этот бот\n\n"
-			"Чтобы узнать ID вашей группы, отправьте '/start' на вашу группу.",
+			"Хорошо. Отправьте ID Группы который добавили этот бот\n\n"
+			"Чтобы узнать ID вашей группы, отправьте `/get_id` на вашу группу.",
 			parse_mode=ParseMode.MARKDOWN, reply_markup=ReplyKeyboardRemove()
 		)
 
@@ -64,35 +115,6 @@ class BotService(BotFunctions, VkRouterService):
 			logger.info("Некорректный ID Группы")
 			await message.answer("Отправьте корректный ID Группы.\n"
 			                     "Только цифры!")
-
-
-	async def is_bot_in_group(self, message: Message, group_id: int, state: FSMContext) -> None:
-		try:
-			logger.info("Бот добавлен в группу")
-			chat = await self.bot.get_chat(-group_id)
-
-			bot_info = await self.bot.get_chat_member(chat_id=-group_id, user_id=self.bot.id)
-
-			if bot_info.status in ChatMemberStatus.ADMINISTRATOR:
-				await message.answer(
-					f"Бот добавлен в группу: {chat.title} и является администратором в этой группе.")
-
-				await state.update_data(telegram_group_id=message.text)
-				await state.set_state(FSMAdmin.vk_group_id)
-
-				await message.answer("Теперь отправьте Url группы Vk")
-
-			else:
-				await message.answer(
-					f"Бот добавлен в группу: {chat.title} но НЕ является администратором в этой группе.")
-				await message.answer("Сделайте Бота администратором группы и отправьте ID группы ещё раз")
-
-		except TelegramBadRequest as e:
-			logger.error(f"{e}")
-			await message.answer("Некорректный ID группы. Пожалуйста, проверьте и попробуйте снова.")
-
-		except Exception as e:
-			logger.error(f"Произошла ошибка: {str(e)}")
 
 
 

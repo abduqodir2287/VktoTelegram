@@ -1,8 +1,13 @@
 from aiogram import Bot, Dispatcher
+from aiogram.enums import ChatMemberStatus
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.fsm.context import FSMContext
+from aiogram.types import Message
 import aiohttp
 
 from src.configs.config import settings
 from src.configs.logger_setup import logger
+from src.domain.bot_service.models import FSMAdmin
 from src.domain.vk_router_service.functions import VkRouterFunctions
 
 
@@ -12,6 +17,35 @@ class BotFunctions(VkRouterFunctions):
 		super().__init__(bot)
 		self.bot = bot
 		self.dp = dp
+
+
+	async def is_bot_in_group(self, message: Message, group_id: int, state: FSMContext) -> None:
+		try:
+			logger.info("Бот добавлен в группу")
+			chat = await self.bot.get_chat(-group_id)
+
+			bot_info = await self.bot.get_chat_member(chat_id=-group_id, user_id=self.bot.id)
+
+			if bot_info.status in ChatMemberStatus.ADMINISTRATOR:
+				await message.answer(
+					f"Бот добавлен в группу: {chat.title} и является администратором в этой группе.")
+
+				await state.update_data(telegram_group_id=message.text)
+				await state.set_state(FSMAdmin.vk_group_id)
+
+				await message.answer("Теперь отправьте Url группы Vk")
+
+			else:
+				await message.answer(
+					f"Бот добавлен в группу: {chat.title} но НЕ является администратором в этой группе.")
+				await message.answer("Сделайте Бота администратором группы и отправьте ID группы ещё раз")
+
+		except TelegramBadRequest as e:
+			logger.error(f"{e}")
+			await message.answer("Некорректный ID группы. Пожалуйста, проверьте и попробуйте снова.")
+
+		except Exception as e:
+			logger.error(f"Произошла ошибка: {str(e)}")
 
 
 	@staticmethod

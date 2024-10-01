@@ -1,5 +1,5 @@
 from aiogram import Dispatcher, Bot, F
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from aiogram.fsm.storage.redis import RedisStorage
@@ -22,8 +22,29 @@ async def start_bot(message: Message, state: FSMContext) -> None:
 
 
 @dp.message(F.text.in_({"Добавил"}), (F.chat.type != 'group') & (F.chat.type != 'supergroup'))
+async def get_group_id(message: Message):
+	await bot_service.channel_or_group_service(message)
+
+
+@dp.message(Command("get_id"))
+@dp.message((F.chat.type == 'group') & (F.chat.type == 'supergroup'))
+async def get_group_id_in_group(message: Message) -> None:
+	await bot_service.get_id_in_group(message)
+
+
+@dp.message(F.text.in_({"Группа"}), (F.chat.type != 'group') & (F.chat.type != 'supergroup'))
 async def get_group_id(message: Message, state: FSMContext):
 	await bot_service.get_group_id(message, state)
+
+
+@dp.message(F.text.in_({"Канал"}), (F.chat.type != 'group') & (F.chat.type != 'supergroup'))
+async def get_channel_message(message: Message, state: FSMContext) -> None:
+	await bot_service.get_channel_message(message, state)
+
+
+@dp.message(FSMAdmin.telegram_channel_id)
+async def get_channel_id(message: Message, state: FSMContext) -> None:
+	await bot_service.get_channel_id_service(message, state)
 
 
 @dp.message(FSMAdmin.telegram_group_id, (F.chat.type != 'group') & (F.chat.type != 'supergroup'))
