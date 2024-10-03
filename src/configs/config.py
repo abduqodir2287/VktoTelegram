@@ -6,8 +6,6 @@ class Settings(BaseSettings):
 	TEXT_MAX_LENGTH: int
 	VK_API_VERSION: str
 	BASE_URL: str
-	GROUP_ACCESS_TOKEN: str
-	GROUP_ID: int
 	VK_APP_SERVICE_KEY: str
 	REDIS_HOST: str
 	REDIS_PORT: int

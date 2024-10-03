@@ -1,4 +1,4 @@
-from aiogram.enums import ParseMode, ChatMemberStatus
+from aiogram.enums import ParseMode
 from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.context import FSMContext
@@ -87,8 +87,8 @@ class BotService(BotFunctions, VkRouterService):
 					await message.answer("Теперь отправьте Url группы Vk")
 
 			except TelegramBadRequest:
-				await message.answer("Бот не добавлен в этот канал. \n"
-				                     "Отправьте сообщения иэ канала, который добавлен этот бот")
+				await message.answer(f"Бот не добавлен в этот канал. Имя канала '{forward_chat_title}' \n"
+				                     f"Отправьте сообщения иэ канала, который добавлен этот бот")
 
 		else:
 			await message.answer("Сообщение не переслано из Канала")

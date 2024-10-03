@@ -35,17 +35,20 @@ class BotFunctions(VkRouterFunctions):
 
 				await message.answer("Теперь отправьте Url группы Vk")
 
-			else:
+			elif bot_info.status in ChatMemberStatus.MEMBER:
 				await message.answer(
 					f"Бот добавлен в группу: {chat.title} но НЕ является администратором в этой группе.")
 				await message.answer("Сделайте Бота администратором группы и отправьте ID группы ещё раз")
 
+				logger.info("Бот добавлен но не Администратором")
+
+			else:
+				await message.answer("Бот не добавлен в эту группу!\n"
+				                     "Добавьте и Сделайте Бота администратором группы и отправьте ID группы ещё раз")
+
 		except TelegramBadRequest as e:
 			logger.error(f"{e}")
 			await message.answer("Некорректный ID группы. Пожалуйста, проверьте и попробуйте снова.")
-
-		except Exception as e:
-			logger.error(f"Произошла ошибка: {str(e)}")
 
 
 	@staticmethod

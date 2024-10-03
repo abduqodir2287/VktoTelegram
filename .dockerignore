@@ -1,7 +1,7 @@
 .env_example
 /.gitignore
 get_group.json
-get_longpool.json
+get_long_pool.json
 get_longpool.py
 get_server.json
 Makefile

@@ -12,8 +12,8 @@ class FSMAdmin(StatesGroup):
 
 
 class GroupInformation(BaseModel):
-	tel_group_id: int
+	telegram_group_id: int
 	vk_group_id: int
-	last_post_id: int | None = None
-	send_status: bool = False
+	last_post_id: int
+	send_status: bool
 

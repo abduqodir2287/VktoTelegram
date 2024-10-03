@@ -22,7 +22,7 @@ async def start_bot(message: Message, state: FSMContext) -> None:
 
 
 @dp.message(F.text.in_({"Добавил"}), (F.chat.type != 'group') & (F.chat.type != 'supergroup'))
-async def get_group_id(message: Message):
+async def group_or_channel(message: Message):
 	await bot_service.channel_or_group_service(message)
 
 
