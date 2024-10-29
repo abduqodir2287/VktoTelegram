@@ -71,7 +71,5 @@ media/
 
 # Other files
 /main.py
-get_group.json
-get_server.json
 task.md
 get_wall.json

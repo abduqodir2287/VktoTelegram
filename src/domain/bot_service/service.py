@@ -51,7 +51,7 @@ class BotService(BotFunctions, VkRouterService):
 
 	@staticmethod
 	async def get_id_in_group(message: Message) -> None:
-		await message.answer(f"ID этой группы: {abs(message.chat.id)}")
+		await message.answer(f"ID этой группы: `{abs(message.chat.id)}`", parse_mode=ParseMode.MARKDOWN)
 
 		logger.info("ID группы успешно передано")
 

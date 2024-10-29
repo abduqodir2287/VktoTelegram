@@ -14,6 +14,22 @@ services:
 
     restart: on-failure
 
+  vk_rabbitmq:
+    image: rabbitmq:4-management-alpine
+
+    ports:
+      - "${RMQ_PORT}:${RMQ_PORT}"
+      - "15672:15672"
+
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RMQ_USER}"
+      RABBITMQ_DEFAULT_PASS: "${RMQ_PASSWORD}"
+
+    volumes:
+      - vk_rabbitmq_data:/var/lib/rabbitmq
+
+    restart: on-failure
+
   bot:
     build: .
 
@@ -27,8 +43,11 @@ services:
 
     depends_on:
       - redis_bot
+      - vk_rabbitmq
 
     restart: on-failure
 
 volumes:
   redis_bot_data:
+  vk_rabbitmq_data:
+

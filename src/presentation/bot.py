@@ -7,6 +7,7 @@ from aiogram.fsm.storage.redis import RedisStorage
 from src.configs.config import settings
 from src.domain.bot_service.service import BotService
 from src.domain.bot_service.models import FSMAdmin
+from src.domain.rabbitmq_service.service import RabbitMQService
 
 storage = RedisStorage.from_url(settings.REDIS_URL)
 
@@ -14,6 +15,8 @@ bot = Bot(token=settings.BOT_TOKEN)
 dp = Dispatcher(storage=storage)
 
 bot_service = BotService(bot, dp)
+
+rmq_service = RabbitMQService()
 
 
 @dp.message(CommandStart())
@@ -61,4 +64,14 @@ async def get_vk_group_id(message: Message, state: FSMContext) -> None:
 @dp.message(F.text.in_({"Другое", "Да"}), (F.chat.type != 'group') & (F.chat.type != 'supergroup'))
 async def group_choice(message: Message, state: FSMContext):
 	await bot_service.group_choice_service(message, state)
+
+
+@dp.startup()
+async def bot_starting() -> None:
+	await rmq_service.connect_to_rabbitmq()
+
+
+@dp.shutdown()
+async def stop_bot() -> None:
+	await rmq_service.rmq_close()
 

@@ -10,6 +10,11 @@ class Settings(BaseSettings):
 	REDIS_HOST: str
 	REDIS_PORT: int
 	REDIS_DATABASE: int
+	RMQ_HOST: str
+	RMQ_PORT: int
+	RMQ_USER: str
+	RMQ_PASSWORD: str
+	RMQ_ROUTING_KEY: str
 	LOG_LEVEL: str
 	LOG_FORMAT: str
 	LOG_FILE: str

@@ -1,10 +1,8 @@
 .env_example
 /.gitignore
-get_group.json
-get_long_pool.json
 get_longpool.py
-get_server.json
 Makefile
 README.md
 .idea/
 /main.py
+get_wall.json
